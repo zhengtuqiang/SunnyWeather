@@ -25,18 +25,32 @@ import kotlinx.android.synthetic.main.now.*
 import java.text.SimpleDateFormat
 import java.util.*
 
+/**
+ * 天气信息展示主界面
+ * 功能包含：
+ * - 显示实时天气信息
+ * - 展示多日天气预报
+ * - 显示生活指数
+ * - 支持下拉刷新
+ * - 侧边抽屉导航
+ */
 class WeatherActivity : AppCompatActivity() {
 
+    // 通过懒加载方式获取ViewModel实例
     val viewModel by lazy { ViewModelProviders.of(this).get(WeatherViewModel::class.java) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // 设置沉浸式状态栏（Android 5.0+）
         if (Build.VERSION.SDK_INT >= 21) {
             val decorView = window.decorView
             decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
             window.statusBarColor = Color.TRANSPARENT
         }
         setContentView(R.layout.activity_weather)
+
+        // 初始化地理位置信息
         if (viewModel.locationLng.isEmpty()) {
             viewModel.locationLng = intent.getStringExtra("location_lng") ?: ""
         }
@@ -46,24 +60,32 @@ class WeatherActivity : AppCompatActivity() {
         if (viewModel.placeName.isEmpty()) {
             viewModel.placeName = intent.getStringExtra("place_name") ?: ""
         }
+
+        // 观察天气数据变化
         viewModel.weatherLiveData.observe(this, Observer { result ->
             val weather = result.getOrNull()
             if (weather != null) {
-                showWeatherInfo(weather)
+                showWeatherInfo(weather)  // 数据获取成功时更新UI
             } else {
                 Toast.makeText(this, "无法成功获取天气信息", Toast.LENGTH_SHORT).show()
                 result.exceptionOrNull()?.printStackTrace()
             }
-            swipeRefresh.isRefreshing = false
+            swipeRefresh.isRefreshing = false  // 结束刷新动画
         })
+
+        // 配置下拉刷新组件
         swipeRefresh.setColorSchemeResources(R.color.colorPrimary)
-        refreshWeather()
+        refreshWeather()  // 初始加载数据
         swipeRefresh.setOnRefreshListener {
-            refreshWeather()
+            refreshWeather()  // 下拉刷新时重新加载数据
         }
+
+        // 导航按钮点击事件
         navBtn.setOnClickListener {
-            drawerLayout.openDrawer(GravityCompat.START)
+            drawerLayout.openDrawer(GravityCompat.START)  // 打开左侧抽屉
         }
+
+        // 抽屉状态监听器
         drawerLayout.addDrawerListener(object : DrawerLayout.DrawerListener {
             override fun onDrawerStateChanged(newState: Int) {}
 
@@ -72,18 +94,22 @@ class WeatherActivity : AppCompatActivity() {
             override fun onDrawerOpened(drawerView: View) {}
 
             override fun onDrawerClosed(drawerView: View) {
+                // 关闭抽屉时隐藏软键盘
                 val manager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
                 manager.hideSoftInputFromWindow(drawerView.windowToken, InputMethodManager.HIDE_NOT_ALWAYS)
             }
         })
     }
 
+    /** 刷新天气数据 */
     fun refreshWeather() {
         viewModel.refreshWeather(viewModel.locationLng, viewModel.locationLat)
-        swipeRefresh.isRefreshing = true
+        swipeRefresh.isRefreshing = true  // 显示刷新动画
     }
 
+    /** 展示完整的天气信息 */
     private fun showWeatherInfo(weather: Weather) {
+        // 设置地点名称
         placeName.text = viewModel.placeName
         val realtime = weather.realtime
         val daily = weather.daily
