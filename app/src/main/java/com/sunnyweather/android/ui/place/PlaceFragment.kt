@@ -54,6 +54,8 @@ class PlaceFragment : Fragment() {
                 adapter.notifyDataSetChanged()
             }
         }
+        //测试显式传参的写法
+        searchPlaceEdit.addTextChangedListener(onTextChanged ={_,_,_,_->} )
         viewModel.placeLiveData.observe(this, Observer{ result ->
             val places = result.getOrNull()
             if (places != null) {

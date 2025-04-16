@@ -1,5 +1,6 @@
 package com.sunnyweather.android.logic
 
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.liveData
 import com.sunnyweather.android.logic.dao.PlaceDao
 import com.sunnyweather.android.logic.model.Place
@@ -22,10 +23,30 @@ object Repository {
         }
     }
 
+    //拆解开的，不封装的版本
+    fun searchPlaces2(query:String):LiveData<Result<List<Place>>>{
+        val liveData = liveData<Result<List<Place>>>(Dispatchers.IO) {
+            try {
+                val placeResponse = SunnyWeatherNetwork.searchPlaces(query)
+                if(placeResponse.status == "ok"){
+                    val places = placeResponse.places
+                    emit(Result.success(places))
+                }else{
+                    emit(Result.failure(RuntimeException("response status is ${placeResponse.status}")))
+                }
+            }catch (e:Exception){
+                emit(Result.failure(e))
+            }
+
+        }
+        return liveData
+    }
+
     fun refreshWeather(lng: String, lat: String, placeName: String) = fire(Dispatchers.IO) {
         coroutineScope {
             val deferredRealtime = async {
-                SunnyWeatherNetwork.getRealtimeWeather(lng, lat)
+//                SunnyWeatherNetwork.getRealtimeWeather(lng, lat)
+                SunnyWeatherNetwork.getRealtimeWeather2(lng, lat)
             }
             val deferredDaily = async {
                 SunnyWeatherNetwork.getDailyWeather(lng, lat)
