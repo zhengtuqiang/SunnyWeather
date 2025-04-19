@@ -13,6 +13,10 @@ class PlaceViewModel : ViewModel() {
     val placeLiveData = Transformations.switchMap(searchLiveData) { query ->
         Repository.searchPlaces2(query)
     }
+    //等价于placeLiveData
+    val placeLiveData2 = searchLiveData.switchMap { query ->
+        Repository.searchPlaces2(query)
+    }
 
     fun searchPlaces(query: String) {
         searchLiveData.value = query
